@@ -3,6 +3,7 @@ import { getRepository } from 'typeorm';
 
 import Orphanage from '../models/Orphanage';
 import OrphanagesView from '../views/Orphanages.view';
+import OrphanageValidator from '../validators/OrphanagesValidator';
 
 export default {
     async create(request: Request, response: Response): Promise<Response> {
@@ -20,8 +21,8 @@ export default {
 
         const requestImages= request.files as Express.Multer.File[];
         const images = requestImages.map(image => ({ path: image.filename }));
-    
-        const orphanage = orphanagesRepository.create({
+
+        const data = {
             name,
             latitude,
             longitude,
@@ -30,11 +31,17 @@ export default {
             openingHours,
             isOpenOnWeekends,
             images
+        };
+
+        await OrphanageValidator.validate(data, {
+            abortEarly: false,
         });
+    
+        const orphanage = orphanagesRepository.create(data);
     
         await orphanagesRepository.save(orphanage);
     
-        return response.status(201).json(orphanage);
+        return response.status(201).json(OrphanagesView.render(orphanage));
     },
 
     async getList(request: Request, response: Response): Promise<Response> {
