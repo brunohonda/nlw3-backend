@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { getRepository } from 'typeorm';
 
 import Orphanage from '../models/Orphanage';
+import OrphanagesView from '../views/Orphanages.view';
 
 export default {
     async create(request: Request, response: Response): Promise<Response> {
@@ -39,18 +40,22 @@ export default {
     async getList(request: Request, response: Response): Promise<Response> {
         const orphanagesRepository = getRepository(Orphanage);
     
-        const orphanages = await orphanagesRepository.find();
+        const orphanages = await orphanagesRepository.find({
+            relations: [ 'images' ]
+        });
 
-        return response.json(orphanages);
+        return response.json(OrphanagesView.renderMany(orphanages));
     },
 
     async get(request: Request, response: Response): Promise<Response> {
         const orphanagesRepository = getRepository(Orphanage);
     
         try {
-            const orphanage = await orphanagesRepository.findOneOrFail(request.params.id);
+            const orphanage = await orphanagesRepository.findOneOrFail(request.params.id, {
+                relations: [ 'images' ]
+            });
 
-            return response.json(orphanage);
+            return response.json(OrphanagesView.render(orphanage));
         } catch (error) {
             return response.status(404).json(error);
         }
